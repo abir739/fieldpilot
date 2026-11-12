@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import 'features/home/home_screen.dart';
+
 void main() {
   runApp(const ProviderScope(child: FieldPilotApp()));
 }
@@ -13,9 +15,7 @@ class FieldPilotApp extends StatelessWidget {
     return MaterialApp(
       title: 'FieldPilot',
       theme: ThemeData(colorSchemeSeed: Colors.teal),
-      home: const Scaffold(
-        body: Center(child: Text('FieldPilot')),
-      ),
+      home: const HomeScreen(),
     );
   }
 }
