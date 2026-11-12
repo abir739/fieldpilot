@@ -1,42 +1,47 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../data/inspection_repository.dart';
 import '../scan/scan_screen.dart';
 
-/// Start screen: scan an asset to begin an inspection.
-class HomeScreen extends StatefulWidget {
+/// Start screen: the list of saved inspections and a button to scan a new asset.
+class HomeScreen extends ConsumerWidget {
   const HomeScreen({super.key});
 
-  @override
-  State<HomeScreen> createState() => _HomeScreenState();
-}
-
-class _HomeScreenState extends State<HomeScreen> {
-  String? _lastCode; // shown for now; next step starts an inspection with it
-
-  Future<void> _scan() async {
+  Future<void> _scanAndStart(BuildContext context, WidgetRef ref) async {
     final code = await Navigator.of(context).push<String>(
       MaterialPageRoute(builder: (_) => const ScanScreen()),
     );
-    if (code != null) setState(() => _lastCode = code);
+    if (code == null) return;
+    await ref.read(inspectionRepositoryProvider).startInspection(code);
   }
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final inspections = ref.watch(inspectionsProvider);
+
     return Scaffold(
       appBar: AppBar(title: const Text('FieldPilot')),
-      body: Center(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            if (_lastCode != null) Text('Asset: $_lastCode'),
-            const SizedBox(height: 16),
-            FilledButton.icon(
-              onPressed: _scan,
-              icon: const Icon(Icons.qr_code_scanner),
-              label: const Text('Scan asset'),
-            ),
-          ],
-        ),
+      body: inspections.when(
+        loading: () => const Center(child: CircularProgressIndicator()),
+        error: (error, _) => Center(child: Text('Error: $error')),
+        data: (items) => items.isEmpty
+            ? const Center(child: Text('No inspections yet'))
+            : ListView(
+                children: [
+                  for (final item in items)
+                    ListTile(
+                      leading: const Icon(Icons.assignment),
+                      title: Text(item.assetCode),
+                      subtitle: Text(item.status),
+                    ),
+                ],
+              ),
+      ),
+      floatingActionButton: FloatingActionButton.extended(
+        onPressed: () => _scanAndStart(context, ref),
+        icon: const Icon(Icons.qr_code_scanner),
+        label: const Text('Scan asset'),
       ),
     );
   }
