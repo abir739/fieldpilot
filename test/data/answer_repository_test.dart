@@ -13,7 +13,7 @@ void main() {
   setUp(() async {
     db = AppDatabase(NativeDatabase.memory());
     answers = AnswerRepository(db);
-    inspectionId = await InspectionRepository(db).startInspection('PUMP-42');
+    inspectionId = (await InspectionRepository(db).openOrStartDraft('PUMP-42')).id;
   });
   tearDown(() => db.close());
 
@@ -32,7 +32,7 @@ void main() {
   });
 
   test('only returns answers of the given inspection', () async {
-    final otherId = await InspectionRepository(db).startInspection('TANK-1');
+    final otherId = (await InspectionRepository(db).openOrStartDraft('TANK-1')).id;
     await answers.setAnswer(otherId, 'No leaks', false);
 
     expect(await answers.watchAnswers(inspectionId).first, isEmpty);

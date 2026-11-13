@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../data/inspection_repository.dart';
+import '../../data/local/app_database.dart';
 import '../inspection/inspection_screen.dart';
 import '../scan/scan_screen.dart';
 
@@ -14,7 +15,15 @@ class HomeScreen extends ConsumerWidget {
       MaterialPageRoute(builder: (_) => const ScanScreen()),
     );
     if (code == null) return;
-    await ref.read(inspectionRepositoryProvider).startInspection(code);
+    final inspection =
+        await ref.read(inspectionRepositoryProvider).openOrStartDraft(code);
+    if (context.mounted) _open(context, inspection);
+  }
+
+  void _open(BuildContext context, Inspection inspection) {
+    Navigator.of(context).push(
+      MaterialPageRoute(builder: (_) => InspectionScreen(inspection: inspection)),
+    );
   }
 
   @override
@@ -36,11 +45,7 @@ class HomeScreen extends ConsumerWidget {
                       title: Text(item.assetCode),
                       subtitle: Text(item.status),
                       trailing: const Icon(Icons.chevron_right),
-                      onTap: () => Navigator.of(context).push(
-                        MaterialPageRoute(
-                          builder: (_) => InspectionScreen(inspection: item),
-                        ),
-                      ),
+                      onTap: () => _open(context, item),
                     ),
                 ],
               ),
