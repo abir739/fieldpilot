@@ -14,6 +14,7 @@ class FieldPilotApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MaterialApp(
       title: 'FieldPilot',
+      debugShowCheckedModeBanner: false,
       theme: ThemeData(colorSchemeSeed: Colors.teal),
       home: const HomeScreen(),
     );
