@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../data/inspection_repository.dart';
+import '../inspection/inspection_screen.dart';
 import '../scan/scan_screen.dart';
 
 /// Start screen: the list of saved inspections and a button to scan a new asset.
@@ -34,6 +35,12 @@ class HomeScreen extends ConsumerWidget {
                       leading: const Icon(Icons.assignment),
                       title: Text(item.assetCode),
                       subtitle: Text(item.status),
+                      trailing: const Icon(Icons.chevron_right),
+                      onTap: () => Navigator.of(context).push(
+                        MaterialPageRoute(
+                          builder: (_) => InspectionScreen(inspection: item),
+                        ),
+                      ),
                     ),
                 ],
               ),
