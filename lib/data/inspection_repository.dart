@@ -11,16 +11,22 @@ class InspectionRepository {
 
   final AppDatabase _db;
 
-  /// Creates a new draft inspection for [assetCode] and returns its id.
-  Future<String> startInspection(String assetCode) async {
+  /// Returns the draft inspection of [assetCode]. If there is none, creates one.
+  /// This way scanning the same asset twice does not make two drafts.
+  Future<Inspection> openOrStartDraft(String assetCode) async {
+    final existing = await (_db.select(_db.inspections)
+          ..where((i) => i.assetCode.equals(assetCode) & i.status.equals('draft'))
+          ..limit(1))
+        .getSingleOrNull();
+    if (existing != null) return existing;
+
     final id = const Uuid().v4(); // made on the phone, so it works offline
-    await _db.into(_db.inspections).insert(InspectionsCompanion.insert(
+    return _db.into(_db.inspections).insertReturning(InspectionsCompanion.insert(
           id: id,
           assetCode: assetCode,
           status: 'draft',
           updatedAt: DateTime.now(),
         ));
-    return id;
   }
 
   /// All inspections, newest first. Emits again whenever the table changes.

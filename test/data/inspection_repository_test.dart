@@ -14,18 +14,26 @@ void main() {
   });
   tearDown(() => db.close());
 
-  test('startInspection saves a draft for the scanned asset', () async {
-    final id = await repo.startInspection('PUMP-42');
+  test('creates a draft for a new asset', () async {
+    final created = await repo.openOrStartDraft('PUMP-42');
 
     final saved = await db.select(db.inspections).getSingle();
-    expect(saved.id, id);
+    expect(saved.id, created.id);
     expect(saved.assetCode, 'PUMP-42');
     expect(saved.status, 'draft');
   });
 
+  test('scanning the same asset again reuses its draft', () async {
+    final first = await repo.openOrStartDraft('TANK_001');
+    final second = await repo.openOrStartDraft('TANK_001');
+
+    expect(second.id, first.id);
+    expect(await db.select(db.inspections).get(), hasLength(1));
+  });
+
   test('watchInspections shows new inspections', () async {
-    await repo.startInspection('PUMP-1');
-    await repo.startInspection('PUMP-2');
+    await repo.openOrStartDraft('PUMP-1');
+    await repo.openOrStartDraft('PUMP-2');
 
     final list = await repo.watchInspections().first;
     expect(list.map((i) => i.assetCode), containsAll(['PUMP-1', 'PUMP-2']));
