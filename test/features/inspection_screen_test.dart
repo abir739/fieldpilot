@@ -4,6 +4,7 @@ import 'package:flutter_test/flutter_test.dart';
 
 import 'package:fieldpilot/data/answer_repository.dart';
 import 'package:fieldpilot/data/local/app_database.dart';
+import 'package:fieldpilot/data/photo_repository.dart';
 import 'package:fieldpilot/domain/checklist.dart';
 import 'package:fieldpilot/features/inspection/inspection_screen.dart';
 
@@ -21,6 +22,7 @@ void main() {
       // Fake answers: widget tests can't wait for a real database.
       overrides: [
         answersProvider('i1').overrideWith((ref) => Stream.value({'No leaks': true})),
+        photosProvider('i1').overrideWith((ref) => Stream.value([])),
       ],
       child: MaterialApp(home: InspectionScreen(inspection: inspection)),
     ));
@@ -30,5 +32,7 @@ void main() {
     for (final question in checklistQuestions) {
       expect(find.text(question), findsOneWidget);
     }
+    await tester.scrollUntilVisible(find.text('Take photo'), 200);
+    expect(find.text('Take photo'), findsOneWidget);
   });
 }
