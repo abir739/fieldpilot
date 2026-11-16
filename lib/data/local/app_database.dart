@@ -11,6 +11,15 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase([QueryExecutor? executor])
       : super(executor ?? driftDatabase(name: 'fieldpilot'));
 
+  /// Bump this every time a table changes, and add a step in [migration].
   @override
-  int get schemaVersion => 1;
+  int get schemaVersion => 2;
+
+  /// Upgrades a database that already exists on a phone, keeping its data.
+  @override
+  MigrationStrategy get migration => MigrationStrategy(
+        onUpgrade: (m, from, to) async {
+          if (from < 2) await m.addColumn(inspections, inspections.note);
+        },
+      );
 }

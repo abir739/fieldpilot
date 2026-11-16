@@ -61,6 +61,16 @@ class $InspectionsTable extends Inspections
     type: DriftSqlType.dateTime,
     requiredDuringInsert: true,
   );
+  static const VerificationMeta _noteMeta = const VerificationMeta('note');
+  @override
+  late final GeneratedColumn<String> note = GeneratedColumn<String>(
+    'note',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(''),
+  );
   @override
   List<GeneratedColumn> get $columns => [
     id,
@@ -68,6 +78,7 @@ class $InspectionsTable extends Inspections
     status,
     version,
     updatedAt,
+    note,
   ];
   @override
   String get aliasedName => _alias ?? actualTableName;
@@ -116,6 +127,12 @@ class $InspectionsTable extends Inspections
     } else if (isInserting) {
       context.missing(_updatedAtMeta);
     }
+    if (data.containsKey('note')) {
+      context.handle(
+        _noteMeta,
+        note.isAcceptableOrUnknown(data['note']!, _noteMeta),
+      );
+    }
     return context;
   }
 
@@ -145,6 +162,10 @@ class $InspectionsTable extends Inspections
         DriftSqlType.dateTime,
         data['${effectivePrefix}updated_at'],
       )!,
+      note: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}note'],
+      )!,
     );
   }
 
@@ -160,12 +181,14 @@ class Inspection extends DataClass implements Insertable<Inspection> {
   final String status;
   final int version;
   final DateTime updatedAt;
+  final String note;
   const Inspection({
     required this.id,
     required this.assetCode,
     required this.status,
     required this.version,
     required this.updatedAt,
+    required this.note,
   });
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
@@ -175,6 +198,7 @@ class Inspection extends DataClass implements Insertable<Inspection> {
     map['status'] = Variable<String>(status);
     map['version'] = Variable<int>(version);
     map['updated_at'] = Variable<DateTime>(updatedAt);
+    map['note'] = Variable<String>(note);
     return map;
   }
 
@@ -185,6 +209,7 @@ class Inspection extends DataClass implements Insertable<Inspection> {
       status: Value(status),
       version: Value(version),
       updatedAt: Value(updatedAt),
+      note: Value(note),
     );
   }
 
@@ -199,6 +224,7 @@ class Inspection extends DataClass implements Insertable<Inspection> {
       status: serializer.fromJson<String>(json['status']),
       version: serializer.fromJson<int>(json['version']),
       updatedAt: serializer.fromJson<DateTime>(json['updatedAt']),
+      note: serializer.fromJson<String>(json['note']),
     );
   }
   @override
@@ -210,6 +236,7 @@ class Inspection extends DataClass implements Insertable<Inspection> {
       'status': serializer.toJson<String>(status),
       'version': serializer.toJson<int>(version),
       'updatedAt': serializer.toJson<DateTime>(updatedAt),
+      'note': serializer.toJson<String>(note),
     };
   }
 
@@ -219,12 +246,14 @@ class Inspection extends DataClass implements Insertable<Inspection> {
     String? status,
     int? version,
     DateTime? updatedAt,
+    String? note,
   }) => Inspection(
     id: id ?? this.id,
     assetCode: assetCode ?? this.assetCode,
     status: status ?? this.status,
     version: version ?? this.version,
     updatedAt: updatedAt ?? this.updatedAt,
+    note: note ?? this.note,
   );
   Inspection copyWithCompanion(InspectionsCompanion data) {
     return Inspection(
@@ -233,6 +262,7 @@ class Inspection extends DataClass implements Insertable<Inspection> {
       status: data.status.present ? data.status.value : this.status,
       version: data.version.present ? data.version.value : this.version,
       updatedAt: data.updatedAt.present ? data.updatedAt.value : this.updatedAt,
+      note: data.note.present ? data.note.value : this.note,
     );
   }
 
@@ -243,13 +273,15 @@ class Inspection extends DataClass implements Insertable<Inspection> {
           ..write('assetCode: $assetCode, ')
           ..write('status: $status, ')
           ..write('version: $version, ')
-          ..write('updatedAt: $updatedAt')
+          ..write('updatedAt: $updatedAt, ')
+          ..write('note: $note')
           ..write(')'))
         .toString();
   }
 
   @override
-  int get hashCode => Object.hash(id, assetCode, status, version, updatedAt);
+  int get hashCode =>
+      Object.hash(id, assetCode, status, version, updatedAt, note);
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
@@ -258,7 +290,8 @@ class Inspection extends DataClass implements Insertable<Inspection> {
           other.assetCode == this.assetCode &&
           other.status == this.status &&
           other.version == this.version &&
-          other.updatedAt == this.updatedAt);
+          other.updatedAt == this.updatedAt &&
+          other.note == this.note);
 }
 
 class InspectionsCompanion extends UpdateCompanion<Inspection> {
@@ -267,6 +300,7 @@ class InspectionsCompanion extends UpdateCompanion<Inspection> {
   final Value<String> status;
   final Value<int> version;
   final Value<DateTime> updatedAt;
+  final Value<String> note;
   final Value<int> rowid;
   const InspectionsCompanion({
     this.id = const Value.absent(),
@@ -274,6 +308,7 @@ class InspectionsCompanion extends UpdateCompanion<Inspection> {
     this.status = const Value.absent(),
     this.version = const Value.absent(),
     this.updatedAt = const Value.absent(),
+    this.note = const Value.absent(),
     this.rowid = const Value.absent(),
   });
   InspectionsCompanion.insert({
@@ -282,6 +317,7 @@ class InspectionsCompanion extends UpdateCompanion<Inspection> {
     required String status,
     this.version = const Value.absent(),
     required DateTime updatedAt,
+    this.note = const Value.absent(),
     this.rowid = const Value.absent(),
   }) : id = Value(id),
        assetCode = Value(assetCode),
@@ -293,6 +329,7 @@ class InspectionsCompanion extends UpdateCompanion<Inspection> {
     Expression<String>? status,
     Expression<int>? version,
     Expression<DateTime>? updatedAt,
+    Expression<String>? note,
     Expression<int>? rowid,
   }) {
     return RawValuesInsertable({
@@ -301,6 +338,7 @@ class InspectionsCompanion extends UpdateCompanion<Inspection> {
       if (status != null) 'status': status,
       if (version != null) 'version': version,
       if (updatedAt != null) 'updated_at': updatedAt,
+      if (note != null) 'note': note,
       if (rowid != null) 'rowid': rowid,
     });
   }
@@ -311,6 +349,7 @@ class InspectionsCompanion extends UpdateCompanion<Inspection> {
     Value<String>? status,
     Value<int>? version,
     Value<DateTime>? updatedAt,
+    Value<String>? note,
     Value<int>? rowid,
   }) {
     return InspectionsCompanion(
@@ -319,6 +358,7 @@ class InspectionsCompanion extends UpdateCompanion<Inspection> {
       status: status ?? this.status,
       version: version ?? this.version,
       updatedAt: updatedAt ?? this.updatedAt,
+      note: note ?? this.note,
       rowid: rowid ?? this.rowid,
     );
   }
@@ -341,6 +381,9 @@ class InspectionsCompanion extends UpdateCompanion<Inspection> {
     if (updatedAt.present) {
       map['updated_at'] = Variable<DateTime>(updatedAt.value);
     }
+    if (note.present) {
+      map['note'] = Variable<String>(note.value);
+    }
     if (rowid.present) {
       map['rowid'] = Variable<int>(rowid.value);
     }
@@ -355,6 +398,7 @@ class InspectionsCompanion extends UpdateCompanion<Inspection> {
           ..write('status: $status, ')
           ..write('version: $version, ')
           ..write('updatedAt: $updatedAt, ')
+          ..write('note: $note, ')
           ..write('rowid: $rowid')
           ..write(')'))
         .toString();
@@ -1710,6 +1754,7 @@ typedef $$InspectionsTableCreateCompanionBuilder =
       required String status,
       Value<int> version,
       required DateTime updatedAt,
+      Value<String> note,
       Value<int> rowid,
     });
 typedef $$InspectionsTableUpdateCompanionBuilder =
@@ -1719,6 +1764,7 @@ typedef $$InspectionsTableUpdateCompanionBuilder =
       Value<String> status,
       Value<int> version,
       Value<DateTime> updatedAt,
+      Value<String> note,
       Value<int> rowid,
     });
 
@@ -1815,6 +1861,11 @@ class $$InspectionsTableFilterComposer
 
   ColumnFilters<DateTime> get updatedAt => $composableBuilder(
     column: $table.updatedAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get note => $composableBuilder(
+    column: $table.note,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -1927,6 +1978,11 @@ class $$InspectionsTableOrderingComposer
     column: $table.updatedAt,
     builder: (column) => ColumnOrderings(column),
   );
+
+  ColumnOrderings<String> get note => $composableBuilder(
+    column: $table.note,
+    builder: (column) => ColumnOrderings(column),
+  );
 }
 
 class $$InspectionsTableAnnotationComposer
@@ -1952,6 +2008,9 @@ class $$InspectionsTableAnnotationComposer
 
   GeneratedColumn<DateTime> get updatedAt =>
       $composableBuilder(column: $table.updatedAt, builder: (column) => column);
+
+  GeneratedColumn<String> get note =>
+      $composableBuilder(column: $table.note, builder: (column) => column);
 
   Expression<T> answersRefs<T extends Object>(
     Expression<T> Function($$AnswersTableAnnotationComposer a) f,
@@ -2066,6 +2125,7 @@ class $$InspectionsTableTableManager
                 Value<String> status = const Value.absent(),
                 Value<int> version = const Value.absent(),
                 Value<DateTime> updatedAt = const Value.absent(),
+                Value<String> note = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => InspectionsCompanion(
                 id: id,
@@ -2073,6 +2133,7 @@ class $$InspectionsTableTableManager
                 status: status,
                 version: version,
                 updatedAt: updatedAt,
+                note: note,
                 rowid: rowid,
               ),
           createCompanionCallback:
@@ -2082,6 +2143,7 @@ class $$InspectionsTableTableManager
                 required String status,
                 Value<int> version = const Value.absent(),
                 required DateTime updatedAt,
+                Value<String> note = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => InspectionsCompanion.insert(
                 id: id,
@@ -2089,6 +2151,7 @@ class $$InspectionsTableTableManager
                 status: status,
                 version: version,
                 updatedAt: updatedAt,
+                note: note,
                 rowid: rowid,
               ),
           withReferenceMapper: (p0) => p0

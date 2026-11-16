@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../data/answer_repository.dart';
 import '../../data/local/app_database.dart';
 import '../../domain/checklist.dart';
+import 'note_field.dart';
 import 'photo_section.dart';
 import 'question_tile.dart';
 
@@ -34,6 +35,10 @@ class InspectionScreen extends ConsumerWidget {
               ),
             const Divider(),
             PhotoSection(inspectionId: inspection.id),
+            NoteField(
+              inspectionId: inspection.id,
+              initialNote: inspection.note,
+            ),
           ],
         ),
       ),
