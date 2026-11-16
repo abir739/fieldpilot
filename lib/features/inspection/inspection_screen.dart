@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../data/answer_repository.dart';
 import '../../data/local/app_database.dart';
 import '../../domain/checklist.dart';
+import 'photo_section.dart';
 import 'question_tile.dart';
 
 /// One inspection: the checklist. Every tap is saved on the phone right away.
@@ -31,6 +32,8 @@ class InspectionScreen extends ConsumerWidget {
                     .read(answerRepositoryProvider)
                     .setAnswer(inspection.id, question, ok),
               ),
+            const Divider(),
+            PhotoSection(inspectionId: inspection.id),
           ],
         ),
       ),
