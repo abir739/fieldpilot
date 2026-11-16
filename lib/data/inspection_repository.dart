@@ -29,6 +29,15 @@ class InspectionRepository {
         ));
   }
 
+  /// Saves the free-text note of an inspection.
+  Future<void> setNote(String inspectionId, String note) {
+    return (_db.update(_db.inspections)..where((i) => i.id.equals(inspectionId)))
+        .write(InspectionsCompanion(
+      note: Value(note),
+      updatedAt: Value(DateTime.now()),
+    ));
+  }
+
   /// All inspections, newest first. Emits again whenever the table changes.
   Stream<List<Inspection>> watchInspections() {
     final query = _db.select(_db.inspections)

@@ -31,6 +31,7 @@ void main() {
         status: 'draft',
         version: 0,
         updatedAt: DateTime(2026, 1, 1),
+    note: '',
       ),
     ]);
 
