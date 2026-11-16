@@ -7,6 +7,7 @@ class Inspections extends Table {
   TextColumn get status => text()(); // 'draft' or 'done'
   IntColumn get version => integer().withDefault(const Constant(0))();
   DateTimeColumn get updatedAt => dateTime()();
+  TextColumn get note => text().withDefault(const Constant(''))(); // added in schema 2
 
   @override
   Set<Column> get primaryKey => {id};
