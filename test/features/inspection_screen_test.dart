@@ -15,6 +15,7 @@ void main() {
     status: 'draft',
     version: 0,
     updatedAt: DateTime(2026, 1, 1),
+    note: '',
   );
 
   testWidgets('shows the asset code and every checklist question', (tester) async {
@@ -32,7 +33,11 @@ void main() {
     for (final question in checklistQuestions) {
       expect(find.text(question), findsOneWidget);
     }
-    await tester.scrollUntilVisible(find.text('Take photo'), 200);
+    // The page and the note box can both scroll: scroll the page (the first one).
+    final page = find.byType(Scrollable).first;
+    await tester.scrollUntilVisible(find.text('Take photo'), 200, scrollable: page);
     expect(find.text('Take photo'), findsOneWidget);
+    await tester.scrollUntilVisible(find.text('Note'), 200, scrollable: page);
+    expect(find.text('Note'), findsOneWidget);
   });
 }

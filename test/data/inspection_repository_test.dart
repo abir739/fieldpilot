@@ -31,6 +31,15 @@ void main() {
     expect(await db.select(db.inspections).get(), hasLength(1));
   });
 
+  test('setNote saves the note', () async {
+    final draft = await repo.openOrStartDraft('PUMP-42');
+
+    await repo.setNote(draft.id, 'small oil leak');
+
+    final saved = await db.select(db.inspections).getSingle();
+    expect(saved.note, 'small oil leak');
+  });
+
   test('watchInspections shows new inspections', () async {
     await repo.openOrStartDraft('PUMP-1');
     await repo.openOrStartDraft('PUMP-2');
