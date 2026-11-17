@@ -1,9 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
-import 'features/home/home_screen.dart';
+import 'data/remote/supabase_config.dart';
+import 'features/auth/auth_gate.dart';
 
-void main() {
+Future<void> main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  // Works offline too: the saved session is loaded from the phone.
+  await Supabase.initialize(url: supabaseUrl, publishableKey: supabasePublishableKey);
   runApp(const ProviderScope(child: FieldPilotApp()));
 }
 
@@ -16,7 +21,7 @@ class FieldPilotApp extends StatelessWidget {
       title: 'FieldPilot',
       debugShowCheckedModeBanner: false,
       theme: ThemeData(colorSchemeSeed: Colors.teal),
-      home: const HomeScreen(),
+      home: const AuthGate(),
     );
   }
 }

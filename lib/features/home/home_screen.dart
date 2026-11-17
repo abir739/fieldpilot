@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../data/inspection_repository.dart';
 import '../../data/local/app_database.dart';
+import '../../data/remote/auth_repository.dart';
 import '../inspection/inspection_screen.dart';
 import '../scan/scan_screen.dart';
 
@@ -31,7 +32,16 @@ class HomeScreen extends ConsumerWidget {
     final inspections = ref.watch(inspectionsProvider);
 
     return Scaffold(
-      appBar: AppBar(title: const Text('FieldPilot')),
+      appBar: AppBar(
+        title: const Text('FieldPilot'),
+        actions: [
+          IconButton(
+            tooltip: 'Sign out',
+            icon: const Icon(Icons.logout),
+            onPressed: () => ref.read(authRepositoryProvider).signOut(),
+          ),
+        ],
+      ),
       body: inspections.when(
         loading: () => const Center(child: CircularProgressIndicator()),
         error: (error, _) => Center(child: Text('Error: $error')),
