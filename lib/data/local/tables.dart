@@ -50,6 +50,7 @@ class Findings extends Table {
 class Outbox extends Table {
   TextColumn get opId => text()();
   TextColumn get entity => text()(); // e.g. 'inspection'
+  TextColumn get entityId => text().withDefault(const Constant(''))(); // schema 3
   TextColumn get payload => text()(); // JSON
   IntColumn get attempts => integer().withDefault(const Constant(0))();
   DateTimeColumn get createdAt => dateTime()();

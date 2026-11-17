@@ -2,6 +2,8 @@ import 'package:drift/drift.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:uuid/uuid.dart';
 
+import '../sync/outbox_writer.dart';
+import '../sync/payloads.dart';
 import 'local/app_database.dart';
 import 'local/database_provider.dart';
 
@@ -20,23 +22,40 @@ class InspectionRepository {
         .getSingleOrNull();
     if (existing != null) return existing;
 
-    final id = const Uuid().v4(); // made on the phone, so it works offline
-    return _db.into(_db.inspections).insertReturning(InspectionsCompanion.insert(
-          id: id,
-          assetCode: assetCode,
-          status: 'draft',
-          updatedAt: DateTime.now(),
-        ));
+    // Row + outbox entry in one transaction: both saved, or neither.
+    return _db.transaction(() async {
+      final created = await _db.into(_db.inspections).insertReturning(
+            InspectionsCompanion.insert(
+              id: const Uuid().v4(), // made on the phone, so it works offline
+              assetCode: assetCode,
+              status: 'draft',
+              updatedAt: DateTime.now(),
+            ),
+          );
+      await _enqueue(created);
+      return created;
+    });
   }
 
   /// Saves the free-text note of an inspection.
   Future<void> setNote(String inspectionId, String note) {
-    return (_db.update(_db.inspections)..where((i) => i.id.equals(inspectionId)))
-        .write(InspectionsCompanion(
-      note: Value(note),
-      updatedAt: Value(DateTime.now()),
-    ));
+    return _db.transaction(() async {
+      final changed = await (_db.update(_db.inspections)
+            ..where((i) => i.id.equals(inspectionId)))
+          .writeReturning(InspectionsCompanion(
+        note: Value(note),
+        updatedAt: Value(DateTime.now()),
+      ));
+      await _enqueue(changed.single);
+    });
   }
+
+  Future<void> _enqueue(Inspection inspection) => enqueueOp(
+        _db,
+        entity: 'inspection',
+        entityId: inspection.id,
+        payload: inspectionPayload(inspection),
+      );
 
   /// All inspections, newest first. Emits again whenever the table changes.
   Stream<List<Inspection>> watchInspections() {
