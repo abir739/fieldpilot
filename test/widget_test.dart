@@ -5,6 +5,7 @@ import 'package:fieldpilot/data/inspection_repository.dart';
 import 'package:fieldpilot/data/local/app_database.dart';
 import 'package:fieldpilot/data/remote/auth_repository.dart';
 import 'package:fieldpilot/main.dart';
+import 'package:fieldpilot/sync/outbox_status.dart';
 
 // Widget tests use fake time, so a real database or server would never answer.
 // We give the app ready-made values instead; the real parts have their own tests.
@@ -12,11 +13,13 @@ Future<void> pumpApp(
   WidgetTester tester, {
   bool signedIn = true,
   List<Inspection> items = const [],
+  int pending = 0,
 }) async {
   await tester.pumpWidget(ProviderScope(
     overrides: [
       isSignedInProvider.overrideWith((ref) => Stream.value(signedIn)),
       inspectionsProvider.overrideWith((ref) => Stream.value(items)),
+      pendingOpsProvider.overrideWith((ref) => Stream.value(pending)),
     ],
     child: const FieldPilotApp(),
   ));
@@ -38,6 +41,13 @@ void main() {
 
     expect(find.text('No inspections yet'), findsOneWidget);
     expect(find.text('Scan asset'), findsOneWidget);
+  });
+
+  testWidgets('shows how many changes wait to sync', (tester) async {
+    await pumpApp(tester, pending: 3);
+
+    expect(find.text('3'), findsOneWidget);
+    expect(find.byTooltip('3 waiting to sync'), findsOneWidget);
   });
 
   testWidgets('lists saved inspections', (tester) async {
