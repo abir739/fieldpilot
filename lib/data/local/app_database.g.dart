@@ -1389,6 +1389,18 @@ class $OutboxTable extends Outbox with TableInfo<$OutboxTable, OutboxData> {
     type: DriftSqlType.string,
     requiredDuringInsert: true,
   );
+  static const VerificationMeta _entityIdMeta = const VerificationMeta(
+    'entityId',
+  );
+  @override
+  late final GeneratedColumn<String> entityId = GeneratedColumn<String>(
+    'entity_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(''),
+  );
   static const VerificationMeta _payloadMeta = const VerificationMeta(
     'payload',
   );
@@ -1427,6 +1439,7 @@ class $OutboxTable extends Outbox with TableInfo<$OutboxTable, OutboxData> {
   List<GeneratedColumn> get $columns => [
     opId,
     entity,
+    entityId,
     payload,
     attempts,
     createdAt,
@@ -1458,6 +1471,12 @@ class $OutboxTable extends Outbox with TableInfo<$OutboxTable, OutboxData> {
       );
     } else if (isInserting) {
       context.missing(_entityMeta);
+    }
+    if (data.containsKey('entity_id')) {
+      context.handle(
+        _entityIdMeta,
+        entityId.isAcceptableOrUnknown(data['entity_id']!, _entityIdMeta),
+      );
     }
     if (data.containsKey('payload')) {
       context.handle(
@@ -1498,6 +1517,10 @@ class $OutboxTable extends Outbox with TableInfo<$OutboxTable, OutboxData> {
         DriftSqlType.string,
         data['${effectivePrefix}entity'],
       )!,
+      entityId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}entity_id'],
+      )!,
       payload: attachedDatabase.typeMapping.read(
         DriftSqlType.string,
         data['${effectivePrefix}payload'],
@@ -1522,12 +1545,14 @@ class $OutboxTable extends Outbox with TableInfo<$OutboxTable, OutboxData> {
 class OutboxData extends DataClass implements Insertable<OutboxData> {
   final String opId;
   final String entity;
+  final String entityId;
   final String payload;
   final int attempts;
   final DateTime createdAt;
   const OutboxData({
     required this.opId,
     required this.entity,
+    required this.entityId,
     required this.payload,
     required this.attempts,
     required this.createdAt,
@@ -1537,6 +1562,7 @@ class OutboxData extends DataClass implements Insertable<OutboxData> {
     final map = <String, Expression>{};
     map['op_id'] = Variable<String>(opId);
     map['entity'] = Variable<String>(entity);
+    map['entity_id'] = Variable<String>(entityId);
     map['payload'] = Variable<String>(payload);
     map['attempts'] = Variable<int>(attempts);
     map['created_at'] = Variable<DateTime>(createdAt);
@@ -1547,6 +1573,7 @@ class OutboxData extends DataClass implements Insertable<OutboxData> {
     return OutboxCompanion(
       opId: Value(opId),
       entity: Value(entity),
+      entityId: Value(entityId),
       payload: Value(payload),
       attempts: Value(attempts),
       createdAt: Value(createdAt),
@@ -1561,6 +1588,7 @@ class OutboxData extends DataClass implements Insertable<OutboxData> {
     return OutboxData(
       opId: serializer.fromJson<String>(json['opId']),
       entity: serializer.fromJson<String>(json['entity']),
+      entityId: serializer.fromJson<String>(json['entityId']),
       payload: serializer.fromJson<String>(json['payload']),
       attempts: serializer.fromJson<int>(json['attempts']),
       createdAt: serializer.fromJson<DateTime>(json['createdAt']),
@@ -1572,6 +1600,7 @@ class OutboxData extends DataClass implements Insertable<OutboxData> {
     return <String, dynamic>{
       'opId': serializer.toJson<String>(opId),
       'entity': serializer.toJson<String>(entity),
+      'entityId': serializer.toJson<String>(entityId),
       'payload': serializer.toJson<String>(payload),
       'attempts': serializer.toJson<int>(attempts),
       'createdAt': serializer.toJson<DateTime>(createdAt),
@@ -1581,12 +1610,14 @@ class OutboxData extends DataClass implements Insertable<OutboxData> {
   OutboxData copyWith({
     String? opId,
     String? entity,
+    String? entityId,
     String? payload,
     int? attempts,
     DateTime? createdAt,
   }) => OutboxData(
     opId: opId ?? this.opId,
     entity: entity ?? this.entity,
+    entityId: entityId ?? this.entityId,
     payload: payload ?? this.payload,
     attempts: attempts ?? this.attempts,
     createdAt: createdAt ?? this.createdAt,
@@ -1595,6 +1626,7 @@ class OutboxData extends DataClass implements Insertable<OutboxData> {
     return OutboxData(
       opId: data.opId.present ? data.opId.value : this.opId,
       entity: data.entity.present ? data.entity.value : this.entity,
+      entityId: data.entityId.present ? data.entityId.value : this.entityId,
       payload: data.payload.present ? data.payload.value : this.payload,
       attempts: data.attempts.present ? data.attempts.value : this.attempts,
       createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
@@ -1606,6 +1638,7 @@ class OutboxData extends DataClass implements Insertable<OutboxData> {
     return (StringBuffer('OutboxData(')
           ..write('opId: $opId, ')
           ..write('entity: $entity, ')
+          ..write('entityId: $entityId, ')
           ..write('payload: $payload, ')
           ..write('attempts: $attempts, ')
           ..write('createdAt: $createdAt')
@@ -1614,13 +1647,15 @@ class OutboxData extends DataClass implements Insertable<OutboxData> {
   }
 
   @override
-  int get hashCode => Object.hash(opId, entity, payload, attempts, createdAt);
+  int get hashCode =>
+      Object.hash(opId, entity, entityId, payload, attempts, createdAt);
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
       (other is OutboxData &&
           other.opId == this.opId &&
           other.entity == this.entity &&
+          other.entityId == this.entityId &&
           other.payload == this.payload &&
           other.attempts == this.attempts &&
           other.createdAt == this.createdAt);
@@ -1629,6 +1664,7 @@ class OutboxData extends DataClass implements Insertable<OutboxData> {
 class OutboxCompanion extends UpdateCompanion<OutboxData> {
   final Value<String> opId;
   final Value<String> entity;
+  final Value<String> entityId;
   final Value<String> payload;
   final Value<int> attempts;
   final Value<DateTime> createdAt;
@@ -1636,6 +1672,7 @@ class OutboxCompanion extends UpdateCompanion<OutboxData> {
   const OutboxCompanion({
     this.opId = const Value.absent(),
     this.entity = const Value.absent(),
+    this.entityId = const Value.absent(),
     this.payload = const Value.absent(),
     this.attempts = const Value.absent(),
     this.createdAt = const Value.absent(),
@@ -1644,6 +1681,7 @@ class OutboxCompanion extends UpdateCompanion<OutboxData> {
   OutboxCompanion.insert({
     required String opId,
     required String entity,
+    this.entityId = const Value.absent(),
     required String payload,
     this.attempts = const Value.absent(),
     required DateTime createdAt,
@@ -1655,6 +1693,7 @@ class OutboxCompanion extends UpdateCompanion<OutboxData> {
   static Insertable<OutboxData> custom({
     Expression<String>? opId,
     Expression<String>? entity,
+    Expression<String>? entityId,
     Expression<String>? payload,
     Expression<int>? attempts,
     Expression<DateTime>? createdAt,
@@ -1663,6 +1702,7 @@ class OutboxCompanion extends UpdateCompanion<OutboxData> {
     return RawValuesInsertable({
       if (opId != null) 'op_id': opId,
       if (entity != null) 'entity': entity,
+      if (entityId != null) 'entity_id': entityId,
       if (payload != null) 'payload': payload,
       if (attempts != null) 'attempts': attempts,
       if (createdAt != null) 'created_at': createdAt,
@@ -1673,6 +1713,7 @@ class OutboxCompanion extends UpdateCompanion<OutboxData> {
   OutboxCompanion copyWith({
     Value<String>? opId,
     Value<String>? entity,
+    Value<String>? entityId,
     Value<String>? payload,
     Value<int>? attempts,
     Value<DateTime>? createdAt,
@@ -1681,6 +1722,7 @@ class OutboxCompanion extends UpdateCompanion<OutboxData> {
     return OutboxCompanion(
       opId: opId ?? this.opId,
       entity: entity ?? this.entity,
+      entityId: entityId ?? this.entityId,
       payload: payload ?? this.payload,
       attempts: attempts ?? this.attempts,
       createdAt: createdAt ?? this.createdAt,
@@ -1696,6 +1738,9 @@ class OutboxCompanion extends UpdateCompanion<OutboxData> {
     }
     if (entity.present) {
       map['entity'] = Variable<String>(entity.value);
+    }
+    if (entityId.present) {
+      map['entity_id'] = Variable<String>(entityId.value);
     }
     if (payload.present) {
       map['payload'] = Variable<String>(payload.value);
@@ -1717,6 +1762,7 @@ class OutboxCompanion extends UpdateCompanion<OutboxData> {
     return (StringBuffer('OutboxCompanion(')
           ..write('opId: $opId, ')
           ..write('entity: $entity, ')
+          ..write('entityId: $entityId, ')
           ..write('payload: $payload, ')
           ..write('attempts: $attempts, ')
           ..write('createdAt: $createdAt, ')
@@ -3165,6 +3211,7 @@ typedef $$OutboxTableCreateCompanionBuilder =
     OutboxCompanion Function({
       required String opId,
       required String entity,
+      Value<String> entityId,
       required String payload,
       Value<int> attempts,
       required DateTime createdAt,
@@ -3174,6 +3221,7 @@ typedef $$OutboxTableUpdateCompanionBuilder =
     OutboxCompanion Function({
       Value<String> opId,
       Value<String> entity,
+      Value<String> entityId,
       Value<String> payload,
       Value<int> attempts,
       Value<DateTime> createdAt,
@@ -3196,6 +3244,11 @@ class $$OutboxTableFilterComposer
 
   ColumnFilters<String> get entity => $composableBuilder(
     column: $table.entity,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get entityId => $composableBuilder(
+    column: $table.entityId,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -3234,6 +3287,11 @@ class $$OutboxTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<String> get entityId => $composableBuilder(
+    column: $table.entityId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   ColumnOrderings<String> get payload => $composableBuilder(
     column: $table.payload,
     builder: (column) => ColumnOrderings(column),
@@ -3264,6 +3322,9 @@ class $$OutboxTableAnnotationComposer
 
   GeneratedColumn<String> get entity =>
       $composableBuilder(column: $table.entity, builder: (column) => column);
+
+  GeneratedColumn<String> get entityId =>
+      $composableBuilder(column: $table.entityId, builder: (column) => column);
 
   GeneratedColumn<String> get payload =>
       $composableBuilder(column: $table.payload, builder: (column) => column);
@@ -3305,6 +3366,7 @@ class $$OutboxTableTableManager
               ({
                 Value<String> opId = const Value.absent(),
                 Value<String> entity = const Value.absent(),
+                Value<String> entityId = const Value.absent(),
                 Value<String> payload = const Value.absent(),
                 Value<int> attempts = const Value.absent(),
                 Value<DateTime> createdAt = const Value.absent(),
@@ -3312,6 +3374,7 @@ class $$OutboxTableTableManager
               }) => OutboxCompanion(
                 opId: opId,
                 entity: entity,
+                entityId: entityId,
                 payload: payload,
                 attempts: attempts,
                 createdAt: createdAt,
@@ -3321,6 +3384,7 @@ class $$OutboxTableTableManager
               ({
                 required String opId,
                 required String entity,
+                Value<String> entityId = const Value.absent(),
                 required String payload,
                 Value<int> attempts = const Value.absent(),
                 required DateTime createdAt,
@@ -3328,6 +3392,7 @@ class $$OutboxTableTableManager
               }) => OutboxCompanion.insert(
                 opId: opId,
                 entity: entity,
+                entityId: entityId,
                 payload: payload,
                 attempts: attempts,
                 createdAt: createdAt,
