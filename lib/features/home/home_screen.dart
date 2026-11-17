@@ -6,6 +6,7 @@ import '../../data/local/app_database.dart';
 import '../../data/remote/auth_repository.dart';
 import '../inspection/inspection_screen.dart';
 import '../scan/scan_screen.dart';
+import 'sync_badge.dart';
 
 /// Start screen: the list of saved inspections and a button to scan a new asset.
 class HomeScreen extends ConsumerWidget {
@@ -35,6 +36,7 @@ class HomeScreen extends ConsumerWidget {
       appBar: AppBar(
         title: const Text('FieldPilot'),
         actions: [
+          const SyncBadge(),
           IconButton(
             tooltip: 'Sign out',
             icon: const Icon(Icons.logout),

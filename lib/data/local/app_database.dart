@@ -13,13 +13,14 @@ class AppDatabase extends _$AppDatabase {
 
   /// Bump this every time a table changes, and add a step in [migration].
   @override
-  int get schemaVersion => 2;
+  int get schemaVersion => 3;
 
   /// Upgrades a database that already exists on a phone, keeping its data.
   @override
   MigrationStrategy get migration => MigrationStrategy(
         onUpgrade: (m, from, to) async {
           if (from < 2) await m.addColumn(inspections, inspections.note);
+          if (from < 3) await m.addColumn(outbox, outbox.entityId);
         },
       );
 }
