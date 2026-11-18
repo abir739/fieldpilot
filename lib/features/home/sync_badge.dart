@@ -3,9 +3,10 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../sync/outbox_status.dart';
 import '../../sync/push_engine.dart';
+import '../../sync/sync_scheduler.dart';
 
 /// Cloud button with the number of changes waiting to sync (hidden when 0).
-/// Tap it to send them now.
+/// Syncing happens by itself; tapping the cloud just does it right now.
 class SyncBadge extends ConsumerStatefulWidget {
   const SyncBadge({super.key});
 
@@ -14,24 +15,36 @@ class SyncBadge extends ConsumerStatefulWidget {
 }
 
 class _SyncBadgeState extends ConsumerState<SyncBadge> {
+  late final AppLifecycleListener _lifecycle;
   bool _syncing = false;
+
+  @override
+  void initState() {
+    super.initState();
+    // Back in the app (maybe with internet again): try at once.
+    _lifecycle = AppLifecycleListener(
+      onResume: () => ref.read(syncSchedulerProvider).syncNow(),
+    );
+  }
+
+  @override
+  void dispose() {
+    _lifecycle.dispose();
+    super.dispose();
+  }
 
   Future<void> _sync() async {
     setState(() => _syncing = true);
-    final result = await ref.read(pushEngineProvider).pushAll();
+    final result = await ref.read(syncSchedulerProvider).syncNow();
     if (!mounted) return;
     setState(() => _syncing = false);
-
-    final message = result.failed
-        ? 'No connection. Your changes are safe and will be sent later.'
-        : result.conflicts > 0
-            ? 'Synced. ${result.conflicts} item(s) were changed on the server; the server version was kept.'
-            : 'Synced ${result.sent} change(s).';
-    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(message)));
+    ScaffoldMessenger.of(context)
+        .showSnackBar(SnackBar(content: Text(syncMessage(result))));
   }
 
   @override
   Widget build(BuildContext context) {
+    ref.watch(syncSchedulerProvider); // keeps automatic sync running
     final pending = ref.watch(pendingOpsProvider).value ?? 0;
 
     if (_syncing) {
@@ -50,4 +63,19 @@ class _SyncBadgeState extends ConsumerState<SyncBadge> {
       ),
     );
   }
+}
+
+/// Short text for the user about one sync run.
+String syncMessage(PushResult result) {
+  if (result.failed) {
+    return 'No connection. Your changes are safe and will be sent later.';
+  }
+  final parts = ['Synced ${result.sent} change(s).'];
+  if (result.conflicts > 0) {
+    parts.add('${result.conflicts} were changed on the server; the server version was kept.');
+  }
+  if (result.rejected > 0) {
+    parts.add('${result.rejected} were refused by the server and removed.');
+  }
+  return parts.join(' ');
 }

@@ -15,6 +15,9 @@ class FakePushServer implements PushApi {
   /// Next call is applied on the server, then throws (answer lost on the way back).
   bool failAfterServer = false;
 
+  /// Next call is refused for good (bad data / not allowed).
+  bool rejectNext = false;
+
   /// Runs during a call, before answering (e.g. the user edits meanwhile).
   Future<void> Function()? whileSending;
 
@@ -28,6 +31,10 @@ class FakePushServer implements PushApi {
     if (failBeforeServer) {
       failBeforeServer = false;
       throw Exception('network down');
+    }
+    if (rejectNext) {
+      rejectNext = false;
+      throw const OpRejected('23503 missing parent row');
     }
     await whileSending?.call();
 
