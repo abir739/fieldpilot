@@ -10,10 +10,16 @@ import 'push_api.dart';
 
 /// What one push run did.
 class PushResult {
-  const PushResult({this.sent = 0, this.conflicts = 0, this.failed = false});
+  const PushResult({
+    this.sent = 0,
+    this.conflicts = 0,
+    this.rejected = 0,
+    this.failed = false,
+  });
 
   final int sent; // entries the server answered (applied or conflict)
   final int conflicts; // of those, how many the server won
+  final int rejected; // entries the server refused for good (removed)
   final bool failed; // stopped early because the network/server failed
 }
 
@@ -25,6 +31,8 @@ class PushResult {
 ///   first answer, so nothing is applied twice).
 /// - On a network error we stop, count the attempt, and keep the order.
 /// - On a conflict the server wins: its copy replaces ours.
+/// - If the server refuses an entry for good, it is removed and we go on,
+///   so one bad entry can never block the whole queue.
 class PushEngine {
   PushEngine(this._db, this._api);
 
@@ -34,6 +42,7 @@ class PushEngine {
   Future<PushResult> pushAll() async {
     var sent = 0;
     var conflicts = 0;
+    var rejected = 0;
 
     for (final op in await outboxInOrder(_db)) {
       final payload = jsonDecode(op.payload) as Map<String, dynamic>;
@@ -46,9 +55,14 @@ class PushEngine {
       final Map<String, dynamic> answer;
       try {
         answer = await _api.pushOp(op.opId, op.entity, payload);
+      } on OpRejected {
+        await _delete(op.opId);
+        rejected++;
+        continue;
       } catch (_) {
         await _countAttempt(op.opId);
-        return PushResult(sent: sent, conflicts: conflicts, failed: true);
+        return PushResult(
+            sent: sent, conflicts: conflicts, rejected: rejected, failed: true);
       }
 
       final conflict = answer['status'] == 'conflict';
@@ -56,14 +70,17 @@ class PushEngine {
       sent++;
       if (conflict) conflicts++;
     }
-    return PushResult(sent: sent, conflicts: conflicts);
+    return PushResult(sent: sent, conflicts: conflicts, rejected: rejected);
   }
+
+  Future<void> _delete(String opId) =>
+      (_db.delete(_db.outbox)..where((o) => o.opId.equals(opId))).go();
 
   Future<void> _handleAnswer(OutboxData op, Map<String, dynamic> answer) {
     return _db.transaction(() async {
       // Delete by op id: if the user edited the row meanwhile, the entry got a
       // new op id and is kept, so the newer change is sent next time.
-      await (_db.delete(_db.outbox)..where((o) => o.opId.equals(op.opId))).go();
+      await _delete(op.opId);
 
       if (op.entity != 'inspection') return;
       if (answer['status'] == 'applied' && answer['version'] != null) {
