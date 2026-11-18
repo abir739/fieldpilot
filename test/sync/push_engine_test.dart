@@ -4,6 +4,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:fieldpilot/data/answer_repository.dart';
 import 'package:fieldpilot/data/inspection_repository.dart';
 import 'package:fieldpilot/data/local/app_database.dart';
+import 'package:fieldpilot/sync/push_api.dart';
 import 'package:fieldpilot/sync/push_engine.dart';
 
 import 'fake_push_server.dart';
@@ -101,6 +102,27 @@ void main() {
     expect(mine.note, 'changed on server');
     expect(mine.version, 2);
     expect(await outbox(), isEmpty);
+  });
+
+  test('a refused entry is removed and does not block the ones after it', () async {
+    final draft = await inspections.openOrStartDraft('PUMP-42');
+    await answers.setAnswer(draft.id, 'No leaks', true);
+    server.rejectNext = true; // the inspection is refused
+
+    final result = await engine.pushAll();
+
+    expect(result.rejected, 1);
+    expect(result.failed, isFalse);
+    expect(server.calls, ['inspection', 'answer']); // kept going
+    expect(await outbox(), isEmpty);
+  });
+
+  test('a network error is not treated as refused', () {
+    expect(isPermanentError('23503'), isTrue); // missing parent row
+    expect(isPermanentError('42501'), isTrue); // not allowed
+    expect(isPermanentError('P0001'), isTrue); // raised by push_op
+    expect(isPermanentError('PGRST301'), isFalse); // login expired: retry
+    expect(isPermanentError(null), isFalse);
   });
 
   test('an edit made while sending is kept and sent next time', () async {
