@@ -21,8 +21,26 @@ class AuthRepository {
   Future<void> signOut() => _auth.signOut();
 
   /// true when someone is signed in. Emits again on every login / logout.
-  Stream<bool> watchSignedIn() =>
-      _auth.onAuthStateChange.map((state) => state.session != null);
+  Stream<bool> watchSignedIn() => signedInStream(
+        _auth.onAuthStateChange,
+        initiallySignedIn: _auth.currentSession != null,
+      );
+}
+
+/// Turns Supabase auth events into "signed in?" values.
+///
+/// Offline, Supabase fails to refresh the login token and reports a network
+/// error on the stream. That must NOT log the user out or break the app: the
+/// saved session is still valid and refreshes when the internet is back.
+/// So network errors are ignored and the last value stays.
+Stream<bool> signedInStream(
+  Stream<AuthState> changes, {
+  required bool initiallySignedIn,
+}) async* {
+  yield initiallySignedIn;
+  yield* changes
+      .map((state) => state.session != null)
+      .handleError((_) {}, test: (e) => e is AuthRetryableFetchException);
 }
 
 final authRepositoryProvider = Provider<AuthRepository>(
