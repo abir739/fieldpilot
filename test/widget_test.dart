@@ -6,6 +6,8 @@ import 'package:fieldpilot/data/local/app_database.dart';
 import 'package:fieldpilot/data/remote/auth_repository.dart';
 import 'package:fieldpilot/main.dart';
 import 'package:fieldpilot/sync/outbox_status.dart';
+import 'package:fieldpilot/sync/push_engine.dart';
+import 'package:fieldpilot/sync/sync_scheduler.dart';
 
 // Widget tests use fake time, so a real database or server would never answer.
 // We give the app ready-made values instead; the real parts have their own tests.
@@ -20,6 +22,9 @@ Future<void> pumpApp(
       isSignedInProvider.overrideWith((ref) => Stream.value(signedIn)),
       inspectionsProvider.overrideWith((ref) => Stream.value(items)),
       pendingOpsProvider.overrideWith((ref) => Stream.value(pending)),
+      syncSchedulerProvider.overrideWith(
+        (ref) => SyncScheduler(() async => const PushResult()),
+      ),
     ],
     child: const FieldPilotApp(),
   ));
