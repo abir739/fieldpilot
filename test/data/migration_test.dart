@@ -36,6 +36,8 @@ void main() {
     expect(op.opId, 'op1'); // old data kept
     expect(op.entityId, ''); // schema 3 column
 
+    expect(await db.select(db.syncCursors).get(), isEmpty); // schema 4 table
+
     await db.close();
   });
 }

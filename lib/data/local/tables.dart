@@ -46,6 +46,16 @@ class Findings extends Table {
   Set<Column> get primaryKey => {id};
 }
 
+/// Bookmark for pull: the newest server time already received, per table
+/// (schema 4). The next pull asks only for rows changed after it.
+class SyncCursors extends Table {
+  TextColumn get name => text()(); // server table, e.g. 'inspections'
+  DateTimeColumn get seenUntil => dateTime()();
+
+  @override
+  Set<Column> get primaryKey => {name};
+}
+
 /// Changes waiting to be sent to the server (the "to-do list" for sync).
 class Outbox extends Table {
   TextColumn get opId => text()();
