@@ -5,7 +5,8 @@ import 'tables.dart';
 
 part 'app_database.g.dart';
 
-@DriftDatabase(tables: [Inspections, Answers, Photos, Findings, Outbox])
+@DriftDatabase(
+    tables: [Inspections, Answers, Photos, Findings, Outbox, SyncCursors])
 class AppDatabase extends _$AppDatabase {
   /// Pass an executor in tests (e.g. an in-memory database).
   AppDatabase([QueryExecutor? executor])
@@ -13,7 +14,7 @@ class AppDatabase extends _$AppDatabase {
 
   /// Bump this every time a table changes, and add a step in [migration].
   @override
-  int get schemaVersion => 3;
+  int get schemaVersion => 4;
 
   /// Upgrades a database that already exists on a phone, keeping its data.
   @override
@@ -21,6 +22,7 @@ class AppDatabase extends _$AppDatabase {
         onUpgrade: (m, from, to) async {
           if (from < 2) await m.addColumn(inspections, inspections.note);
           if (from < 3) await m.addColumn(outbox, outbox.entityId);
+          if (from < 4) await m.createTable(syncCursors);
         },
       );
 }

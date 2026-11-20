@@ -6,6 +6,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../data/local/app_database.dart';
 import '../data/local/database_provider.dart';
 import 'outbox_writer.dart';
+import 'payloads.dart';
 import 'push_api.dart';
 
 /// What one push run did.
@@ -94,15 +95,8 @@ class PushEngine {
   /// Server wins: overwrite our row and drop our unsent edits of it.
   Future<void> _takeServerCopy(Map<String, dynamic> server) async {
     final id = server['id'] as String;
-    await (_db.update(_db.inspections)..where((i) => i.id.equals(id))).write(
-      InspectionsCompanion(
-        assetCode: Value(server['asset_code'] as String),
-        status: Value(server['status'] as String),
-        note: Value(server['note'] as String),
-        version: Value(server['version'] as int),
-        updatedAt: Value(DateTime.parse(server['updated_at'] as String)),
-      ),
-    );
+    await (_db.update(_db.inspections)..where((i) => i.id.equals(id)))
+        .write(inspectionFromServer(server));
     await (_db.delete(_db.outbox)
           ..where((o) => o.entity.equals('inspection') & o.entityId.equals(id)))
         .go();
