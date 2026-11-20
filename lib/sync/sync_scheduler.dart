@@ -4,6 +4,7 @@ import 'dart:math';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'outbox_status.dart';
+import 'pull_engine.dart';
 import 'push_engine.dart';
 
 /// Wait before retrying after [failures] failed runs in a row:
@@ -73,12 +74,34 @@ class SyncScheduler {
   void dispose() => _timer?.cancel();
 }
 
-/// The app's scheduler. It pokes itself whenever changes wait in the outbox.
+/// One full sync: send our changes first, then get the server's.
+/// Push first, so a pull never brings back an old copy of something we edited.
+Future<PushResult> pushThenPull(PushEngine push, PullEngine pull) async {
+  final pushed = await push.pushAll();
+  if (pushed.failed) return pushed;
+  try {
+    await pull.pullAll();
+    return pushed;
+  } catch (_) {
+    return PushResult(
+      sent: pushed.sent,
+      conflicts: pushed.conflicts,
+      rejected: pushed.rejected,
+      failed: true,
+    );
+  }
+}
+
+/// The app's scheduler. It syncs when the app opens and whenever changes
+/// wait in the outbox.
 final syncSchedulerProvider = Provider<SyncScheduler>((ref) {
-  final scheduler = SyncScheduler(ref.watch(pushEngineProvider).pushAll);
+  final push = ref.watch(pushEngineProvider);
+  final pull = ref.watch(pullEngineProvider);
+  final scheduler = SyncScheduler(() => pushThenPull(push, pull));
   ref.listen(pendingOpsProvider, (_, pending) {
     if ((pending.value ?? 0) > 0) scheduler.poke();
-  }, fireImmediately: true);
+  });
+  scheduler.poke(); // app opened: get what changed on the server
   ref.onDispose(scheduler.dispose);
   return scheduler;
 });
