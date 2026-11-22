@@ -71,6 +71,17 @@ class $InspectionsTable extends Inspections
     requiredDuringInsert: false,
     defaultValue: const Constant(''),
   );
+  static const VerificationMeta _serverWonAtMeta = const VerificationMeta(
+    'serverWonAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> serverWonAt = GeneratedColumn<DateTime>(
+    'server_won_at',
+    aliasedName,
+    true,
+    type: DriftSqlType.dateTime,
+    requiredDuringInsert: false,
+  );
   @override
   List<GeneratedColumn> get $columns => [
     id,
@@ -79,6 +90,7 @@ class $InspectionsTable extends Inspections
     version,
     updatedAt,
     note,
+    serverWonAt,
   ];
   @override
   String get aliasedName => _alias ?? actualTableName;
@@ -133,6 +145,15 @@ class $InspectionsTable extends Inspections
         note.isAcceptableOrUnknown(data['note']!, _noteMeta),
       );
     }
+    if (data.containsKey('server_won_at')) {
+      context.handle(
+        _serverWonAtMeta,
+        serverWonAt.isAcceptableOrUnknown(
+          data['server_won_at']!,
+          _serverWonAtMeta,
+        ),
+      );
+    }
     return context;
   }
 
@@ -166,6 +187,10 @@ class $InspectionsTable extends Inspections
         DriftSqlType.string,
         data['${effectivePrefix}note'],
       )!,
+      serverWonAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}server_won_at'],
+      ),
     );
   }
 
@@ -182,6 +207,7 @@ class Inspection extends DataClass implements Insertable<Inspection> {
   final int version;
   final DateTime updatedAt;
   final String note;
+  final DateTime? serverWonAt;
   const Inspection({
     required this.id,
     required this.assetCode,
@@ -189,6 +215,7 @@ class Inspection extends DataClass implements Insertable<Inspection> {
     required this.version,
     required this.updatedAt,
     required this.note,
+    this.serverWonAt,
   });
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
@@ -199,6 +226,9 @@ class Inspection extends DataClass implements Insertable<Inspection> {
     map['version'] = Variable<int>(version);
     map['updated_at'] = Variable<DateTime>(updatedAt);
     map['note'] = Variable<String>(note);
+    if (!nullToAbsent || serverWonAt != null) {
+      map['server_won_at'] = Variable<DateTime>(serverWonAt);
+    }
     return map;
   }
 
@@ -210,6 +240,9 @@ class Inspection extends DataClass implements Insertable<Inspection> {
       version: Value(version),
       updatedAt: Value(updatedAt),
       note: Value(note),
+      serverWonAt: serverWonAt == null && nullToAbsent
+          ? const Value.absent()
+          : Value(serverWonAt),
     );
   }
 
@@ -225,6 +258,7 @@ class Inspection extends DataClass implements Insertable<Inspection> {
       version: serializer.fromJson<int>(json['version']),
       updatedAt: serializer.fromJson<DateTime>(json['updatedAt']),
       note: serializer.fromJson<String>(json['note']),
+      serverWonAt: serializer.fromJson<DateTime?>(json['serverWonAt']),
     );
   }
   @override
@@ -237,6 +271,7 @@ class Inspection extends DataClass implements Insertable<Inspection> {
       'version': serializer.toJson<int>(version),
       'updatedAt': serializer.toJson<DateTime>(updatedAt),
       'note': serializer.toJson<String>(note),
+      'serverWonAt': serializer.toJson<DateTime?>(serverWonAt),
     };
   }
 
@@ -247,6 +282,7 @@ class Inspection extends DataClass implements Insertable<Inspection> {
     int? version,
     DateTime? updatedAt,
     String? note,
+    Value<DateTime?> serverWonAt = const Value.absent(),
   }) => Inspection(
     id: id ?? this.id,
     assetCode: assetCode ?? this.assetCode,
@@ -254,6 +290,7 @@ class Inspection extends DataClass implements Insertable<Inspection> {
     version: version ?? this.version,
     updatedAt: updatedAt ?? this.updatedAt,
     note: note ?? this.note,
+    serverWonAt: serverWonAt.present ? serverWonAt.value : this.serverWonAt,
   );
   Inspection copyWithCompanion(InspectionsCompanion data) {
     return Inspection(
@@ -263,6 +300,9 @@ class Inspection extends DataClass implements Insertable<Inspection> {
       version: data.version.present ? data.version.value : this.version,
       updatedAt: data.updatedAt.present ? data.updatedAt.value : this.updatedAt,
       note: data.note.present ? data.note.value : this.note,
+      serverWonAt: data.serverWonAt.present
+          ? data.serverWonAt.value
+          : this.serverWonAt,
     );
   }
 
@@ -274,14 +314,15 @@ class Inspection extends DataClass implements Insertable<Inspection> {
           ..write('status: $status, ')
           ..write('version: $version, ')
           ..write('updatedAt: $updatedAt, ')
-          ..write('note: $note')
+          ..write('note: $note, ')
+          ..write('serverWonAt: $serverWonAt')
           ..write(')'))
         .toString();
   }
 
   @override
   int get hashCode =>
-      Object.hash(id, assetCode, status, version, updatedAt, note);
+      Object.hash(id, assetCode, status, version, updatedAt, note, serverWonAt);
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
@@ -291,7 +332,8 @@ class Inspection extends DataClass implements Insertable<Inspection> {
           other.status == this.status &&
           other.version == this.version &&
           other.updatedAt == this.updatedAt &&
-          other.note == this.note);
+          other.note == this.note &&
+          other.serverWonAt == this.serverWonAt);
 }
 
 class InspectionsCompanion extends UpdateCompanion<Inspection> {
@@ -301,6 +343,7 @@ class InspectionsCompanion extends UpdateCompanion<Inspection> {
   final Value<int> version;
   final Value<DateTime> updatedAt;
   final Value<String> note;
+  final Value<DateTime?> serverWonAt;
   final Value<int> rowid;
   const InspectionsCompanion({
     this.id = const Value.absent(),
@@ -309,6 +352,7 @@ class InspectionsCompanion extends UpdateCompanion<Inspection> {
     this.version = const Value.absent(),
     this.updatedAt = const Value.absent(),
     this.note = const Value.absent(),
+    this.serverWonAt = const Value.absent(),
     this.rowid = const Value.absent(),
   });
   InspectionsCompanion.insert({
@@ -318,6 +362,7 @@ class InspectionsCompanion extends UpdateCompanion<Inspection> {
     this.version = const Value.absent(),
     required DateTime updatedAt,
     this.note = const Value.absent(),
+    this.serverWonAt = const Value.absent(),
     this.rowid = const Value.absent(),
   }) : id = Value(id),
        assetCode = Value(assetCode),
@@ -330,6 +375,7 @@ class InspectionsCompanion extends UpdateCompanion<Inspection> {
     Expression<int>? version,
     Expression<DateTime>? updatedAt,
     Expression<String>? note,
+    Expression<DateTime>? serverWonAt,
     Expression<int>? rowid,
   }) {
     return RawValuesInsertable({
@@ -339,6 +385,7 @@ class InspectionsCompanion extends UpdateCompanion<Inspection> {
       if (version != null) 'version': version,
       if (updatedAt != null) 'updated_at': updatedAt,
       if (note != null) 'note': note,
+      if (serverWonAt != null) 'server_won_at': serverWonAt,
       if (rowid != null) 'rowid': rowid,
     });
   }
@@ -350,6 +397,7 @@ class InspectionsCompanion extends UpdateCompanion<Inspection> {
     Value<int>? version,
     Value<DateTime>? updatedAt,
     Value<String>? note,
+    Value<DateTime?>? serverWonAt,
     Value<int>? rowid,
   }) {
     return InspectionsCompanion(
@@ -359,6 +407,7 @@ class InspectionsCompanion extends UpdateCompanion<Inspection> {
       version: version ?? this.version,
       updatedAt: updatedAt ?? this.updatedAt,
       note: note ?? this.note,
+      serverWonAt: serverWonAt ?? this.serverWonAt,
       rowid: rowid ?? this.rowid,
     );
   }
@@ -384,6 +433,9 @@ class InspectionsCompanion extends UpdateCompanion<Inspection> {
     if (note.present) {
       map['note'] = Variable<String>(note.value);
     }
+    if (serverWonAt.present) {
+      map['server_won_at'] = Variable<DateTime>(serverWonAt.value);
+    }
     if (rowid.present) {
       map['rowid'] = Variable<int>(rowid.value);
     }
@@ -399,6 +451,7 @@ class InspectionsCompanion extends UpdateCompanion<Inspection> {
           ..write('version: $version, ')
           ..write('updatedAt: $updatedAt, ')
           ..write('note: $note, ')
+          ..write('serverWonAt: $serverWonAt, ')
           ..write('rowid: $rowid')
           ..write(')'))
         .toString();
@@ -2015,6 +2068,7 @@ typedef $$InspectionsTableCreateCompanionBuilder =
       Value<int> version,
       required DateTime updatedAt,
       Value<String> note,
+      Value<DateTime?> serverWonAt,
       Value<int> rowid,
     });
 typedef $$InspectionsTableUpdateCompanionBuilder =
@@ -2025,6 +2079,7 @@ typedef $$InspectionsTableUpdateCompanionBuilder =
       Value<int> version,
       Value<DateTime> updatedAt,
       Value<String> note,
+      Value<DateTime?> serverWonAt,
       Value<int> rowid,
     });
 
@@ -2126,6 +2181,11 @@ class $$InspectionsTableFilterComposer
 
   ColumnFilters<String> get note => $composableBuilder(
     column: $table.note,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get serverWonAt => $composableBuilder(
+    column: $table.serverWonAt,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -2243,6 +2303,11 @@ class $$InspectionsTableOrderingComposer
     column: $table.note,
     builder: (column) => ColumnOrderings(column),
   );
+
+  ColumnOrderings<DateTime> get serverWonAt => $composableBuilder(
+    column: $table.serverWonAt,
+    builder: (column) => ColumnOrderings(column),
+  );
 }
 
 class $$InspectionsTableAnnotationComposer
@@ -2271,6 +2336,11 @@ class $$InspectionsTableAnnotationComposer
 
   GeneratedColumn<String> get note =>
       $composableBuilder(column: $table.note, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get serverWonAt => $composableBuilder(
+    column: $table.serverWonAt,
+    builder: (column) => column,
+  );
 
   Expression<T> answersRefs<T extends Object>(
     Expression<T> Function($$AnswersTableAnnotationComposer a) f,
@@ -2386,6 +2456,7 @@ class $$InspectionsTableTableManager
                 Value<int> version = const Value.absent(),
                 Value<DateTime> updatedAt = const Value.absent(),
                 Value<String> note = const Value.absent(),
+                Value<DateTime?> serverWonAt = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => InspectionsCompanion(
                 id: id,
@@ -2394,6 +2465,7 @@ class $$InspectionsTableTableManager
                 version: version,
                 updatedAt: updatedAt,
                 note: note,
+                serverWonAt: serverWonAt,
                 rowid: rowid,
               ),
           createCompanionCallback:
@@ -2404,6 +2476,7 @@ class $$InspectionsTableTableManager
                 Value<int> version = const Value.absent(),
                 required DateTime updatedAt,
                 Value<String> note = const Value.absent(),
+                Value<DateTime?> serverWonAt = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => InspectionsCompanion.insert(
                 id: id,
@@ -2412,6 +2485,7 @@ class $$InspectionsTableTableManager
                 version: version,
                 updatedAt: updatedAt,
                 note: note,
+                serverWonAt: serverWonAt,
                 rowid: rowid,
               ),
           withReferenceMapper: (p0) => p0

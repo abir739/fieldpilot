@@ -57,6 +57,15 @@ class InspectionRepository {
         payload: inspectionPayload(inspection),
       );
 
+  /// The user closed the conflict banner. Phone only: nothing to sync.
+  Future<void> dismissServerWon(String inspectionId) =>
+      (_db.update(_db.inspections)..where((i) => i.id.equals(inspectionId)))
+          .write(const InspectionsCompanion(serverWonAt: Value(null)));
+
+  /// One inspection, live: emits again when sync changes it.
+  Stream<Inspection> watchInspection(String id) =>
+      (_db.select(_db.inspections)..where((i) => i.id.equals(id))).watchSingle();
+
   /// All inspections, newest first. Emits again whenever the table changes.
   Stream<List<Inspection>> watchInspections() {
     final query = _db.select(_db.inspections)
@@ -71,4 +80,8 @@ final inspectionRepositoryProvider = Provider<InspectionRepository>(
 
 final inspectionsProvider = StreamProvider<List<Inspection>>(
   (ref) => ref.watch(inspectionRepositoryProvider).watchInspections(),
+);
+
+final inspectionProvider = StreamProvider.family<Inspection, String>(
+  (ref, id) => ref.watch(inspectionRepositoryProvider).watchInspection(id),
 );
