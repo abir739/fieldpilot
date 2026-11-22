@@ -95,8 +95,11 @@ class PushEngine {
   /// Server wins: overwrite our row and drop our unsent edits of it.
   Future<void> _takeServerCopy(Map<String, dynamic> server) async {
     final id = server['id'] as String;
-    await (_db.update(_db.inspections)..where((i) => i.id.equals(id)))
-        .write(inspectionFromServer(server));
+    await (_db.update(_db.inspections)..where((i) => i.id.equals(id))).write(
+          // Remember it, so the screen can tell the user (conflict banner).
+          inspectionFromServer(server)
+              .copyWith(serverWonAt: Value(DateTime.now())),
+        );
     await (_db.delete(_db.outbox)
           ..where((o) => o.entity.equals('inspection') & o.entityId.equals(id)))
         .go();
