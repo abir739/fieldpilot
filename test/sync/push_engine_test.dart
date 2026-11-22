@@ -101,7 +101,14 @@ void main() {
     final mine = await local(draft.id);
     expect(mine.note, 'changed on server');
     expect(mine.version, 2);
+    expect(mine.serverWonAt, isNotNull); // the screen will show the banner
     expect(await outbox(), isEmpty);
+  });
+
+  test('a normal push does not show the conflict banner', () async {
+    final draft = await inspections.openOrStartDraft('PUMP-42');
+    await engine.pushAll();
+    expect((await local(draft.id)).serverWonAt, isNull);
   });
 
   test('a refused entry is removed and does not block the ones after it', () async {

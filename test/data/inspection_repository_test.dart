@@ -1,3 +1,4 @@
+import 'package:drift/drift.dart' show Value;
 import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
 
@@ -13,6 +14,18 @@ void main() {
     repo = InspectionRepository(db);
   });
   tearDown(() => db.close());
+
+  test('closing the conflict banner clears it and sends nothing', () async {
+    final draft = await repo.openOrStartDraft('PUMP-42');
+    await db.delete(db.outbox).go(); // pretend it was synced
+    await (db.update(db.inspections)..where((i) => i.id.equals(draft.id)))
+        .write(InspectionsCompanion(serverWonAt: Value(DateTime.now())));
+
+    await repo.dismissServerWon(draft.id);
+
+    expect((await repo.watchInspection(draft.id).first).serverWonAt, isNull);
+    expect(await db.select(db.outbox).get(), isEmpty); // phone-only flag
+  });
 
   test('creates a draft for a new asset', () async {
     final created = await repo.openOrStartDraft('PUMP-42');
