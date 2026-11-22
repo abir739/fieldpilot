@@ -31,6 +31,7 @@ void main() {
     final inspection = await db.select(db.inspections).getSingle();
     expect(inspection.assetCode, 'PUMP-42'); // old data kept
     expect(inspection.note, ''); // schema 2 column
+    expect(inspection.serverWonAt, isNull); // schema 5 column
 
     final op = await db.select(db.outbox).getSingle();
     expect(op.opId, 'op1'); // old data kept

@@ -56,7 +56,13 @@ class HomeScreen extends ConsumerWidget {
                       leading: const Icon(Icons.assignment),
                       title: Text(item.assetCode),
                       subtitle: Text(item.status),
-                      trailing: const Icon(Icons.chevron_right),
+                      trailing: item.serverWonAt != null
+                          ? Icon(
+                              Icons.sync_problem,
+                              color: Theme.of(context).colorScheme.error,
+                              semanticLabel: 'Changed on the server',
+                            )
+                          : const Icon(Icons.chevron_right),
                       onTap: () => _open(context, item),
                     ),
                 ],
